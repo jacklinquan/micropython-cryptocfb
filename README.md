@@ -85,3 +85,62 @@ bytearray(b"_#\xbf\x02\xd6\x19\x0c)\xd9\x18\xaf\xb9\xa4{JP\xf6j\xa3\xb2\xb2\xc6b
 bytearray(b'This is a long message that needs to be encrypted.d\xd5\x99vk\x08\x1c\x82\xf0_\xb8\x8aw\x85')
 >>> cfb.reset_vector()
 ```
+
+## AES-128 8-bit CFB mode
+The 8-bit CFB mode is less efficient than the default (128-bit) CFB mode.
+But its advantage is it can encrypt or decrypt data byte by byte.
+So it is easy to implement data stream encryption or decryption with it.
+
+``` python
+>>> from cryptocfb import CryptoCFB
+>>>
+>>> key = b'0123456789abcdef'
+>>> iv = bytes(reversed(key))
+>>> cfb1 = CryptoCFB(key, iv, 8)
+>>> cfb2 = CryptoCFB(key, iv, 8)
+>>>
+>>> plain = b'This is a long message that needs to be encrypted.'
+>>> cipher = bytearray()
+>>> decrypted_plain = bytearray()
+>>>
+>>> for i in range(len(plain)):
+...     cb = cfb1.encrypt(plain[i : i + 1])
+...     cipher.extend(cb)
+...     db = cfb2.decrypt(cb)
+...     decrypted_plain.extend(db)
+...
+>>> cipher
+bytearray(b'_\xf7+\xf1`4\x88\x88\x88\xba\xfb\x87\xe0_Lc\xbf\xc9AM\x95\xf3\x8dR\x1b>~\x91\x00\x9a\x1f\t\x99$\x02\xfbC\x810_J\x89\x9a\x81>Z\xe6\x9f^H')
+>>> decrypted_plain
+bytearray(b'This is a long message that needs to be encrypted.')
+```
+
+During transmission, if any encrypted data byte is corrupted, the result decrypted data will be corrupted as well.
+By the nature of CFB mode, the communication will recover by it self after several garbage bytes (17 bytes in the case below).
+This self-recovery behaviour makes it suitable for serial communication where data corruption could happen.
+
+``` python
+>>> from cryptocfb import CryptoCFB
+>>>
+>>> key = b'0123456789abcdef'
+>>> iv = bytes(reversed(key))
+>>> cfb1 = CryptoCFB(key, iv, 8)
+>>> cfb2 = CryptoCFB(key, iv, 8)
+>>>
+>>> plain = b'This is a long message that needs to be encrypted.'
+>>> cipher = bytearray()
+>>> decrypted_plain = bytearray()
+>>>
+>>> for i in range(len(plain)):
+...     cb = cfb1.encrypt(plain[i : i + 1])
+...     if i == 10:
+...         cb[0] ^= 0x01
+...     cipher.extend(cb)
+...     db = cfb2.decrypt(cb)
+...     decrypted_plain.extend(db)
+...
+>>> cipher
+bytearray(b'_\xf7+\xf1`4\x88\x88\x88\xba\xfa\x87\xe0_Lc\xbf\xc9AM\x95\xf3\x8dR\x1b>~\x91\x00\x9a\x1f\t\x99$\x02\xfbC\x810_J\x89\x9a\x81>Z\xe6\x9f^H')
+>>> decrypted_plain
+bytearray(b'This is a m\x12\xa2;\xf5\xdb\xbd\x10\xa0\xc2\xbd\xa2\xa4\x05V\xc2\xdd needs to be encrypted.')
+```
