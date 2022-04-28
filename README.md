@@ -16,6 +16,8 @@ This module works under MicroPython and it is tested with MicroPython V1.18.
 
 For a compatible CPython version, please find [Python package cryptocfb](https://github.com/jacklinquan/cryptocfb).
 
+For a compatible C version, please find [Python package cryptocfb_C_implementation](https://github.com/jacklinquan/cryptocfb_C_implementation).
+
 ## Installation
 ``` Python
 >>> import upip
